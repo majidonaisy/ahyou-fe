@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Amiri, Tajawal } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "sonner"
 
 const amiri = Amiri({
   subsets: ["arabic"],
@@ -34,7 +35,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="font-tajawal antialiased">{children}</body>
+      <body className="font-tajawal antialiased">{children}
+        <Toaster />
+      </body>
     </html>
   )
 }

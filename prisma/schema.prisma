@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(user)  // Default role is 'user'
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+  organization Organization?
+}
+
+
+enum Role {
+  user       // Regular user (attendee)
+  organizer  // Event organizer (who can create/manage events)
+}
+
+model Organization {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique // Link to the user (organizer)     
+  name             String
+  description      String
+  location         Json?
+
+  isVerified       Boolean  @default(false) // Can be used for verification process
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  time        String
+  location    Json
+  category    Category
+  speaker     String
+  posterUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("events")
+}
+
+enum Category {
+  MOURNING // عزاء
+  LECTURE // محاضرة
+  PRAYER // دعاء
+  SEMINAR // ندوة
+  PILGRIMAGE // زيارة
+  CELEBRATION // احتفال
+
+  @@map("categories")
+}
