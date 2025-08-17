@@ -1,12 +1,26 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ArrowRight, Plus, Calendar } from "lucide-react"
-import { Navigation } from "@/components/navigation"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ArrowRight, Plus, Calendar } from "lucide-react";
+import { Navigation } from "@/components/navigation";
 
 export default function HomePage() {
+  const [isOrgOwner, setIsOrgOwner] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        setIsOrgOwner(!!u.isOrganizationOwner || u.role === "organizer");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -19,7 +33,10 @@ export default function HomePage() {
             <h1 className="font-amiri text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-foreground mb-6">
               أحيوا أمرنا رحم اللهُ مَنْ أحيى أمرنا
             </h1>
-            <Badge variant="secondary" className="font-tajawal text-sm opacity-70">
+            <Badge
+              variant="secondary"
+              className="font-tajawal text-sm opacity-70"
+            >
               منصة الفعاليات الدينية
             </Badge>
           </div>
@@ -35,15 +52,17 @@ export default function HomePage() {
               <ArrowLeft className="mr-2 h-5 w-5 rtl:rotate-180 group-hover:translate-x-1 transition-transform" />
             </Button>
 
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full sm:w-auto border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg group bg-transparent"
-            >
-              <Plus className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-              <span className="font-tajawal">أضف فعالية</span>
-              <ArrowRight className="mr-2 h-5 w-5 rtl:rotate-180 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            {isOrgOwner && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg group bg-transparent"
+              >
+                <Plus className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                <span className="font-tajawal">أضف فعالية</span>
+                <ArrowRight className="mr-2 h-5 w-5 rtl:rotate-180 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            )}
           </div>
 
           {/* Subtle Scroll Indicator */}
@@ -58,5 +77,5 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/20 pointer-events-none"></div>
       </main>
     </div>
-  )
+  );
 }

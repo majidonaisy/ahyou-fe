@@ -7,12 +7,13 @@ import Image from "next/image";
 import {
   ArrowLeft,
   Upload,
-  Calendar,
+  Calendar as CalendarIcon,
   MapPin,
   User,
   FileText,
   ImageIcon,
   Plus,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import Link from "next/link";
 import { Navigation } from "@/components/navigation";
 import { toast } from "sonner";
@@ -43,6 +53,7 @@ const eventCategories = [
 
 export default function AddEventPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>();
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
@@ -311,7 +322,7 @@ export default function AddEventPage() {
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-[#B81D24]" />
+                    <CalendarIcon className="w-5 h-5 text-[#B81D24]" />
                     التاريخ والوقت
                   </CardTitle>
                 </CardHeader>
@@ -324,16 +335,43 @@ export default function AddEventPage() {
                       >
                         التاريخ *
                       </Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) =>
-                          handleInputChange("date", e.target.value)
-                        }
-                        className="bg-input border-border focus:border-[#B81D24] font-tajawal"
-                        required
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-input border-border focus:border-[#B81D24] font-tajawal",
+                              !selectedDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {selectedDate ? (
+                              format(selectedDate, "PPP", { locale: ar })
+                            ) : (
+                              <span>اختر التاريخ</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              setSelectedDate(date);
+                              if (date) {
+                                handleInputChange(
+                                  "date",
+                                  format(date, "yyyy-MM-dd")
+                                );
+                              }
+                            }}
+                            disabled={(date) =>
+                              date < new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label
@@ -342,16 +380,88 @@ export default function AddEventPage() {
                       >
                         الوقت *
                       </Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={formData.time}
-                        onChange={(e) =>
-                          handleInputChange("time", e.target.value)
-                        }
-                        className="bg-input border-border focus:border-[#B81D24] font-tajawal"
-                        required
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal bg-input border-border focus:border-[#B81D24] font-tajawal",
+                              !formData.time && "text-muted-foreground"
+                            )}
+                          >
+                            <Clock className="mr-2 h-4 w-4" />
+                            {formData.time ? (
+                              <span>{formData.time}</span>
+                            ) : (
+                              <span>اختر الوقت</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-4" align="start">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">
+                                الساعة
+                              </Label>
+                              <Select
+                                value={formData.time.split(":")[0] || ""}
+                                onValueChange={(hour) => {
+                                  const minute =
+                                    formData.time.split(":")[1] || "00";
+                                  handleInputChange(
+                                    "time",
+                                    `${hour}:${minute}`
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="--" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }, (_, i) => (
+                                    <SelectItem
+                                      key={i}
+                                      value={i.toString().padStart(2, "0")}
+                                    >
+                                      {i.toString().padStart(2, "0")}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">
+                                الدقيقة
+                              </Label>
+                              <Select
+                                value={formData.time.split(":")[1] || ""}
+                                onValueChange={(minute) => {
+                                  const hour =
+                                    formData.time.split(":")[0] || "00";
+                                  handleInputChange(
+                                    "time",
+                                    `${hour}:${minute}`
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-20">
+                                  <SelectValue placeholder="--" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 60 }, (_, i) => (
+                                    <SelectItem
+                                      key={i}
+                                      value={i.toString().padStart(2, "0")}
+                                    >
+                                      {i.toString().padStart(2, "0")}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </CardContent>
@@ -371,7 +481,7 @@ export default function AddEventPage() {
                       htmlFor="region"
                       className="font-tajawal text-sm font-medium"
                     >
-                      المنطقة (region) *
+                      المنطقة *
                     </Label>
                     <Input
                       id="region"
@@ -390,7 +500,7 @@ export default function AddEventPage() {
                       htmlFor="addressDetail"
                       className="font-tajawal text-sm font-medium"
                     >
-                      تفاصيل العنوان (addressDetail)
+                      تفاصيل العنوان
                     </Label>
                     <Input
                       id="addressDetail"
@@ -408,7 +518,7 @@ export default function AddEventPage() {
                       htmlFor="mapsLink"
                       className="font-tajawal text-sm font-medium"
                     >
-                      رابط الخريطة (mapsLink)
+                      رابط الخريطة
                     </Label>
                     <Input
                       id="mapsLink"

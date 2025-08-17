@@ -124,7 +124,7 @@ export default function EventsPage() {
           <Button
             variant={selectedCategory === null ? "default" : "outline"}
             onClick={() => setSelectedCategory(null)}
-            className="font-tajawal bg-[#B81D24] hover:bg-[#B81D24]/80 border-[#B81D24] text-white"
+            className="font-tajawal bg-[#B81D24] hover:bg-[#B81D24]/80 border-[#B81D24]"
           >
             الكل
           </Button>
