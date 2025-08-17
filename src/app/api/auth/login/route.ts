@@ -14,18 +14,37 @@ export async function POST(req: NextRequest) {
   if (!user)
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-  console.log(user)
+  console.log(user);
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid)
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-
-  const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
-    expiresIn: "7d",
+  // load organization if exists (to include organizationId in token)
+  const organization = await prisma.organization.findUnique({
+    where: { userId: user.id },
   });
+
+  // include role and organizationId (if any) in the token
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      role: user.role,
+      organizationId: organization ? organization.id : null,
+    },
+    JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
 
   return NextResponse.json({
     token,
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isOrganizationOwner: !!organization,
+    },
   });
 }

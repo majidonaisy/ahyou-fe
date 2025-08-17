@@ -9,7 +9,10 @@ export async function GET(
     const { id } = params;
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const event = await prisma.event.findUnique({ where: { id } });
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: { Organization: true },
+    });
     if (!event)
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
 

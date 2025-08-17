@@ -12,6 +12,7 @@ import {
   User,
   FileText,
   ImageIcon,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,14 +50,19 @@ export default function AddEventPage() {
     category: "",
     date: "",
     time: "",
-    location: "",
-    address: "",
-    organizer: "",
+    region: "",
+    addressDetail: "",
+    mapsLink: "",
     contact: "",
-    speaker: "",
+    attendees: [],
   });
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // الحضور - allow multiple entries
+  const [attendees, setAttendees] = useState<string[]>([""]);
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       const { createClient } = await import("@supabase/supabase-js");
@@ -66,7 +72,7 @@ export default function AddEventPage() {
       );
 
       const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
         .upload(fileName, file);
 
@@ -79,7 +85,7 @@ export default function AddEventPage() {
       const { data: publicUrlData } = supabase.storage
         .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET!)
         .getPublicUrl(fileName);
-        console.log(publicUrlData)
+      console.log(publicUrlData);
 
       if (publicUrlData?.publicUrl) {
         setSelectedImage(publicUrlData.publicUrl);
@@ -98,11 +104,38 @@ export default function AddEventPage() {
     e.preventDefault();
     (async () => {
       try {
-        const payload = { ...formData, image: selectedImage };
+        const location = {
+          region: formData.region || undefined,
+          addressDetail: formData.addressDetail || undefined,
+          mapsLink: formData.mapsLink || undefined,
+        };
+
+        const payload = {
+          title: formData.title,
+          description: formData.description,
+          date: formData.date,
+          time: formData.time,
+          location: location,
+          contact: formData.contact,
+          // filter out empty attendee entries
+          speakers: attendees.filter((a) => a && a.trim().length > 0),
+          category: formData.category,
+          posterUrl: selectedImage,
+        };
+
+        const token =
+          typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (!token) {
+          toast.error("الرجاء تسجيل الدخول");
+          return;
+        }
 
         const res = await fetch("/api/events", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify(payload),
         });
 
@@ -123,7 +156,7 @@ export default function AddEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Navigation />
 
       <div className="max-w-4xl mx-auto px-4 pt-24 pb-12">
@@ -140,7 +173,7 @@ export default function AddEventPage() {
           <Link href="/events">
             <Button
               variant="ghost"
-              className="text-white hover:text-[#B81D24] hover:bg-gray-900/50"
+              className="text-foreground hover:text-accent hover:bg-card/90"
             >
               <ArrowLeft className="w-4 h-4 ml-2" />
               إلغاء
@@ -152,7 +185,7 @@ export default function AddEventPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Image Upload Section */}
             <div className="lg:col-span-1">
-              <Card className="bg-gray-900/30 border-gray-800/30 sticky top-24">
+              <Card className="bg-card border-border sticky top-24">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
                     <ImageIcon className="w-5 h-5 text-[#B81D24]" />
@@ -196,7 +229,7 @@ export default function AddEventPage() {
             {/* Form Fields */}
             <div className="lg:col-span-2 space-y-6">
               {/* Basic Information */}
-              <Card className="bg-gray-900/30 border-gray-800/30">
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
                     <FileText className="w-5 h-5 text-[#B81D24]" />
@@ -218,7 +251,7 @@ export default function AddEventPage() {
                         handleInputChange("title", e.target.value)
                       }
                       placeholder="مثال: مجلس عزاء الإمام الحسين (ع)"
-                      className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
+                      className="bg-input border-border focus:border-[#B81D24] font-tajawal"
                       required
                     />
                   </div>
@@ -236,10 +269,10 @@ export default function AddEventPage() {
                         handleInputChange("category", value)
                       }
                     >
-                      <SelectTrigger className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal">
+                      <SelectTrigger className="bg-input border-border focus:border-[#B81D24] font-tajawal">
                         <SelectValue placeholder="اختر نوع الفعالية" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-gray-700">
+                      <SelectContent className="bg-card border-border">
                         {eventCategories.map((category) => (
                           <SelectItem
                             key={category}
@@ -267,7 +300,7 @@ export default function AddEventPage() {
                         handleInputChange("description", e.target.value)
                       }
                       placeholder="اكتب وصفاً مفصلاً عن الفعالية ومحتواها..."
-                      className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal min-h-[120px] resize-none"
+                      className="bg-input border-border focus:border-[#B81D24] font-tajawal min-h-[120px] resize-none"
                       required
                     />
                   </div>
@@ -275,7 +308,7 @@ export default function AddEventPage() {
               </Card>
 
               {/* Date & Time */}
-              <Card className="bg-gray-900/30 border-gray-800/30">
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-[#B81D24]" />
@@ -298,7 +331,7 @@ export default function AddEventPage() {
                         onChange={(e) =>
                           handleInputChange("date", e.target.value)
                         }
-                        className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
+                        className="bg-input border-border focus:border-[#B81D24] font-tajawal"
                         required
                       />
                     </div>
@@ -316,7 +349,7 @@ export default function AddEventPage() {
                         onChange={(e) =>
                           handleInputChange("time", e.target.value)
                         }
-                        className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
+                        className="bg-input border-border focus:border-[#B81D24] font-tajawal"
                         required
                       />
                     </div>
@@ -325,7 +358,7 @@ export default function AddEventPage() {
               </Card>
 
               {/* Location */}
-              <Card className="bg-gray-900/30 border-gray-800/30">
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-[#B81D24]" />
@@ -335,45 +368,62 @@ export default function AddEventPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label
-                      htmlFor="location"
+                      htmlFor="region"
                       className="font-tajawal text-sm font-medium"
                     >
-                      اسم المكان *
+                      المنطقة (region) *
                     </Label>
                     <Input
-                      id="location"
-                      value={formData.location}
+                      id="region"
+                      value={formData.region}
                       onChange={(e) =>
-                        handleInputChange("location", e.target.value)
+                        handleInputChange("region", e.target.value)
                       }
-                      placeholder="مثال: حسينية الإمام علي (ع)"
-                      className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
+                      placeholder="مثال: الضاحية الجنوبية لبيروت"
+                      className="bg-input border-border focus:border-[#B81D24] font-tajawal"
                       required
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label
-                      htmlFor="address"
+                      htmlFor="addressDetail"
                       className="font-tajawal text-sm font-medium"
                     >
-                      العنوان التفصيلي *
+                      تفاصيل العنوان (addressDetail)
                     </Label>
                     <Input
-                      id="address"
-                      value={formData.address}
+                      id="addressDetail"
+                      value={formData.addressDetail}
                       onChange={(e) =>
-                        handleInputChange("address", e.target.value)
+                        handleInputChange("addressDetail", e.target.value)
                       }
-                      placeholder="مثال: شارع الكاظمية، بغداد، العراق"
-                      className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
-                      required
+                      placeholder="مثال: شارع بعجور"
+                      className="bg-input border-border focus:border-[#B81D24] font-tajawal"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="mapsLink"
+                      className="font-tajawal text-sm font-medium"
+                    >
+                      رابط الخريطة (mapsLink)
+                    </Label>
+                    <Input
+                      id="mapsLink"
+                      value={formData.mapsLink}
+                      onChange={(e) =>
+                        handleInputChange("mapsLink", e.target.value)
+                      }
+                      placeholder="https://maps.google.com/..."
+                      className="bg-input border-border focus:border-[#B81D24] font-tajawal"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Organizer Information */}
-              <Card className="bg-gray-900/30 border-gray-800/30">
+              {/* <Card className="bg-gray-900/30 border-gray-800/30">
                 <CardHeader>
                   <CardTitle className="font-amiri text-xl flex items-center gap-2">
                     <User className="w-5 h-5 text-[#B81D24]" />
@@ -381,24 +431,6 @@ export default function AddEventPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="organizer"
-                      className="font-tajawal text-sm font-medium"
-                    >
-                      الجهة المنظمة *
-                    </Label>
-                    <Input
-                      id="organizer"
-                      value={formData.organizer}
-                      onChange={(e) =>
-                        handleInputChange("organizer", e.target.value)
-                      }
-                      placeholder="مثال: مؤسسة الإمام الحسين (ع) الخيرية"
-                      className="bg-[#0B0B0B] border-gray-700 focus:border-[#B81D24] font-tajawal"
-                      required
-                    />
-                  </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label
@@ -437,6 +469,60 @@ export default function AddEventPage() {
                     </div>
                   </div>
                 </CardContent>
+              </Card> */}
+
+              {/* Attendees (الحضور) - dynamic list */}
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="font-amiri text-xl flex items-center gap-2">
+                    <User className="w-5 h-5 text-[#B81D24]" />
+                    الحضور
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-gray-400 font-tajawal text-sm">
+                      العلماء، الرواديد، الخطباء، قراء العزاء...
+                    </p>
+
+                    {attendees.map((att, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <Input
+                          value={att}
+                          onChange={(e) => {
+                            const copy = [...attendees];
+                            copy[idx] = e.target.value;
+                            setAttendees(copy);
+                          }}
+                          placeholder={`اسم الحضور ${idx + 1}`}
+                          className="bg-input border-border focus:border-[#B81D24] font-tajawal"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const copy = attendees.filter((_, i) => i !== idx);
+                            setAttendees(copy.length ? copy : [""]);
+                          }}
+                          className="text-gray-300"
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    ))}
+
+                    <div>
+                      <Button
+                        type="button"
+                        onClick={() => setAttendees((s) => [...s, ""])}
+                        className="mt-2 bg-[#B81D24] hover:bg-[#B81D24]/90"
+                      >
+                        <Plus className="w-4 h-4 ml-2" />
+                        إضافة
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
 
               {/* Submit Button */}
@@ -444,14 +530,14 @@ export default function AddEventPage() {
                 <Link href="/events">
                   <Button
                     variant="outline"
-                    className="font-tajawal border-gray-700 text-gray-300 hover:bg-gray-900/50 bg-transparent"
+                    className="font-tajawal border-border text-muted-foreground hover:bg-card/90 bg-transparent"
                   >
                     إلغاء
                   </Button>
                 </Link>
                 <Button
                   type="submit"
-                  className="bg-[#B81D24] hover:bg-[#B81D24]/90 text-white font-tajawal px-8"
+                  className="bg-[#B81D24] hover:bg-[#B81D24]/90 text-white font-tajawal px-8 btn-white-text"
                 >
                   نشر الفعالية
                 </Button>

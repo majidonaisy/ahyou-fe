@@ -6,24 +6,25 @@
 
 :root {
   /* Updated color tokens to match the design brief with deep black background and crimson red accents */
-  --background: oklch(0.985 0 0); /* Light mode: near white */
-  --foreground: oklch(0.043 0 0); /* Light mode: deep black */
-  --card: oklch(0.985 0 0);
-  --card-foreground: oklch(0.043 0 0);
-  --popover: oklch(0.985 0 0);
-  --popover-foreground: oklch(0.043 0 0);
+  --background: #ffffff; /* Light mode: white */
+  --foreground: #000000; /* Light mode: black (page fonts) */
+  /* Card surfaces: soft off-white and dark text for legibility in light theme */
+  --card: #f8fafc; /* subtle off-white */
+  --card-foreground: #0f172a; /* slate-900 - dark text on cards */
+  --popover: #ffffff;
+  --popover-foreground: #000000;
   --primary: oklch(0.43 0.18 15); /* Crimson red #B81D24 */
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0 0); /* Light gray */
-  --secondary-foreground: oklch(0.043 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.43 0 0);
+  --secondary: #f3f4f6; /* Light gray */
+  --secondary-foreground: #1f2937; /* darker gray */
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280; /* muted text color */
   --accent: oklch(0.43 0.18 15); /* Crimson red accent */
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.43 0.18 15);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.96 0 0);
+  --border: #e6e7ea; /* subtle border for cards/inputs */
+  --input: #ffffff; /* input background (white) */
   --ring: oklch(0.43 0.18 15);
   --chart-1: oklch(0.43 0.18 15);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -31,10 +32,10 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.043 0 0);
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
   --sidebar-primary: oklch(0.43 0.18 15);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.96 0 0);
   --sidebar-accent-foreground: oklch(0.043 0 0);
   --sidebar-border: oklch(0.9 0 0);
@@ -163,3 +164,17 @@
     }
   }
 }
+
+/* Light-mode safety: make any explicit `text-white` utility render using the
+   light-theme foreground (black) so fonts are readable in light theme.
+   This avoids needing to update every file immediately; it's a safe, low-risk
+   override that will be ignored once classes are migrated to theme tokens. */
+:root:not(.dark) [class*="text-white"] {
+  color: var(--foreground) !important;
+}
+
+/* Helper to force white text on specific buttons in light mode (e.g., primary action) */
+:root:not(.dark) .btn-white-text {
+  color: #ffffff !important;
+}
+

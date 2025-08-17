@@ -1,9 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Category } from "@/generated/prisma";
+import { Category, Prisma } from "@/generated/prisma";
 
 export async function POST(req: NextRequest) {
   try {
+    // require auth token so we can get organizationId
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.replace(/^Bearer\s+/i, "");
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    let orgId: number | null = null;
+    try {
+      const jwt = (await import(
+        "jsonwebtoken"
+      )) as typeof import("jsonwebtoken");
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "dev-secret"
+      ) as unknown;
+      if (
+        decoded &&
+        typeof decoded === "object" &&
+        "organizationId" in decoded
+      ) {
+        const d = decoded as Record<string, unknown>;
+        orgId = typeof d.organizationId === "number" ? d.organizationId : null;
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       title,
@@ -11,15 +38,12 @@ export async function POST(req: NextRequest) {
       date,
       time,
       location,
-      address,
-      organizer,
-      contact,
-      speaker,
+      speakers,
       category,
       posterUrl,
     } = body;
 
-    if (!title || !date || !time || !location || !organizer || !contact) {
+    if (!title || !date || !time || !location) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -33,20 +57,28 @@ export async function POST(req: NextRequest) {
       "مجالس العزاء": "MOURNING",
       "ندوات فقهية": "SEMINAR",
       "مناسبات دينية": "CELEBRATION",
+      "دروس تفسير": "LECTURE",
+      "أمسيات شعرية": "CELEBRATION",
     };
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description,
-        date: new Date(date),
-        time,
-        location: { name: location, address },
-        category: (categoryMap[category] as Category) ?? "LECTURE",
-        speaker: speaker ?? "",
-        posterUrl
-      },
-    });
+    const data = {
+      title,
+      description,
+      date: new Date(date),
+      time,
+      location: typeof location === "object" ? location : { name: location },
+      category: (categoryMap[category] as Category) ?? "LECTURE",
+      // store speakers array (if provided) as JSON
+      speakers: Array.isArray(speakers) ? speakers : undefined,
+      posterUrl,
+    } as unknown as Prisma.EventCreateInput;
+
+    if (orgId != null) {
+      // generated client expects 'Organization' (capitalized) for the relation field
+      data.Organization = { connect: { id: orgId } };
+    }
+
+    const event = await prisma.event.create({ data });
 
     return NextResponse.json({ event });
   } catch (err) {
@@ -71,13 +103,15 @@ export async function GET(req: NextRequest) {
         orderBy: { date: "desc" },
         skip,
         take: limit,
-        select:{
-            title:true,
-            date:true,
-            time:true,
-            location:true,
-            category:true,
-        }
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          time: true,
+          location: true,
+          category: true,
+          posterUrl: true,
+        },
       }),
     ]);
 

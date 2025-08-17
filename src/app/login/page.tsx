@@ -37,8 +37,9 @@ export default function LoginPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.error) return alert(data.error);
-        // Save token to localStorage for now
+        // Save token and user info to localStorage for now
         if (data.token) localStorage.setItem("token", data.token);
+        if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
         toast("تم تسجيل الدخول بنجاح!", {
           style: {
             backgroundColor: "#000000ff",
@@ -58,18 +59,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 text-foreground">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="font-amiri text-4xl font-bold text-white mb-2">
+          <h1 className="font-amiri text-4xl font-bold text-foreground mb-2">
             أحيوا
           </h1>
         </div>
 
-        <Card className="bg-[#0B0B0B] border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="font-tajawal text-2xl text-white">
+            <CardTitle className="font-tajawal text-2xl text-foreground">
               تسجيل الدخول
             </CardTitle>
             <CardDescription className="font-tajawal text-gray-400">
